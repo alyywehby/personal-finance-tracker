@@ -13,7 +13,7 @@ class ReportController extends Controller
     public function monthly(Request $request)
     {
         $request->validate([
-            'year' => 'required|integer|min:2000|max:2099',
+            'year'  => 'required|integer|min:2000|max:2099',
             'month' => 'required|integer|min:1|max:12',
         ]);
 
@@ -23,36 +23,23 @@ class ReportController extends Controller
             (int) $request->month
         );
 
-        return response()->json([
-            'success' => true,
-            'data' => $data,
-            'message' => '',
-        ]);
+        return $this->apiResponse($data);
     }
 
     public function summary()
     {
-        $data = $this->reportService->getSixMonthsSummary(auth()->id());
-        return response()->json([
-            'success' => true,
-            'data' => $data,
-            'message' => '',
-        ]);
+        return $this->apiResponse($this->reportService->getSixMonthsSummary(auth()->id()));
     }
 
     public function sendSummary(Request $request)
     {
         $request->validate([
-            'year' => 'required|integer|min:2000|max:2099',
+            'year'  => 'required|integer|min:2000|max:2099',
             'month' => 'required|integer|min:1|max:12',
         ]);
 
         SendMonthlySummaryJob::dispatch(auth()->user(), (int) $request->year, (int) $request->month);
 
-        return response()->json([
-            'success' => true,
-            'data' => null,
-            'message' => 'Email queued successfully',
-        ]);
+        return $this->apiResponse(message: 'Email queued successfully');
     }
 }

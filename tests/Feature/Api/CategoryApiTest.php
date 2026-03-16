@@ -5,6 +5,7 @@ use App\Models\Category;
 use App\Models\Transaction;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Laravel\Sanctum\Sanctum;
 use Tests\TestCase;
 
 class CategoryApiTest extends TestCase
@@ -13,7 +14,8 @@ class CategoryApiTest extends TestCase
 
     public function test_user_can_list_own_categories(): void
     {
-        $user = $this->actingAsUser();
+        $user = User::factory()->create(['locale' => 'en']);
+        Sanctum::actingAs($user);
         Category::factory()->count(3)->create(['user_id' => $user->id]);
 
         $response = $this->getJson('/api/v1/categories');

@@ -26,6 +26,16 @@ class TransactionService
         return $query;
     }
 
+    public function getRecentTransactions(int $userId, int $limit = 5)
+    {
+        return Transaction::with('category')
+            ->where('user_id', $userId)
+            ->orderBy('transaction_date', 'desc')
+            ->orderBy('created_at', 'desc')
+            ->limit($limit)
+            ->get();
+    }
+
     public function streamCsvExport(int $userId, array $filters): StreamedResponse
     {
         $locale = App::getLocale();

@@ -22,11 +22,9 @@ class TransactionController extends Controller
             ->getFilteredQuery(auth()->id(), $filters)
             ->paginate($perPage);
 
-        return response()->json([
-            'success' => true,
-            'data' => TransactionResource::collection($transactions)->response()->getData(true),
-            'message' => '',
-        ]);
+        return $this->apiResponse(
+            TransactionResource::collection($transactions)->response()->getData(true)
+        );
     }
 
     public function store(StoreTransactionRequest $request)
@@ -34,11 +32,11 @@ class TransactionController extends Controller
         $transaction = auth()->user()->transactions()->create($request->validated());
         $transaction->load('category');
 
-        return response()->json([
-            'success' => true,
-            'data' => new TransactionResource($transaction),
-            'message' => 'Transaction created successfully',
-        ], 201);
+        return $this->apiResponse(
+            new TransactionResource($transaction),
+            'Transaction created successfully',
+            201
+        );
     }
 
     public function show(Transaction $transaction)
@@ -46,11 +44,7 @@ class TransactionController extends Controller
         $this->authorizeTransaction($transaction);
         $transaction->load('category');
 
-        return response()->json([
-            'success' => true,
-            'data' => new TransactionResource($transaction),
-            'message' => '',
-        ]);
+        return $this->apiResponse(new TransactionResource($transaction));
     }
 
     public function update(UpdateTransactionRequest $request, Transaction $transaction)
@@ -59,11 +53,7 @@ class TransactionController extends Controller
         $transaction->update($request->validated());
         $transaction->load('category');
 
-        return response()->json([
-            'success' => true,
-            'data' => new TransactionResource($transaction),
-            'message' => 'Transaction updated successfully',
-        ]);
+        return $this->apiResponse(new TransactionResource($transaction), 'Transaction updated successfully');
     }
 
     public function destroy(Transaction $transaction)
@@ -71,11 +61,7 @@ class TransactionController extends Controller
         $this->authorizeTransaction($transaction);
         $transaction->delete();
 
-        return response()->json([
-            'success' => true,
-            'data' => null,
-            'message' => 'Transaction deleted successfully',
-        ]);
+        return $this->apiResponse(message: 'Transaction deleted successfully');
     }
 
     public function export(Request $request)
@@ -87,7 +73,7 @@ class TransactionController extends Controller
     private function authorizeTransaction(Transaction $transaction): void
     {
         if ($transaction->user_id !== auth()->id()) {
-            abort(response()->json(['success' => false, 'message' => 'Forbidden', 'errors' => []], 403));
+            abort(403);
         }
     }
 }

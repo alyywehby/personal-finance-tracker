@@ -6,65 +6,47 @@ use App\Http\Requests\StoreCategoryRequest;
 use App\Http\Requests\UpdateCategoryRequest;
 use App\Http\Resources\CategoryResource;
 use App\Models\Category;
+use App\Services\CategoryService;
 
 class CategoryController extends Controller
 {
+    public function __construct(private CategoryService $categoryService) {}
+
     public function index()
     {
-        $categories = auth()->user()->categories()->withCount('transactions')->get();
-        return response()->json([
-            'success' => true,
-            'data' => CategoryResource::collection($categories),
-            'message' => '',
-        ]);
+        $categories = $this->categoryService->getForUser(auth()->id());
+        return $this->apiResponse(CategoryResource::collection($categories));
     }
 
     public function store(StoreCategoryRequest $request)
     {
-        $category = auth()->user()->categories()->create($request->validated());
-        return response()->json([
-            'success' => true,
-            'data' => new CategoryResource($category),
-            'message' => 'Category created successfully',
-        ], 201);
+        $category = $this->categoryService->create(auth()->user(), $request->validated());
+        return $this->apiResponse(new CategoryResource($category), 'Category created successfully', 201);
     }
 
     public function update(UpdateCategoryRequest $request, Category $category)
     {
         $this->authorizeCategory($category);
-        $category->update($request->validated());
+        $this->categoryService->update($category, $request->validated());
 
-        return response()->json([
-            'success' => true,
-            'data' => new CategoryResource($category),
-            'message' => 'Category updated successfully',
-        ]);
+        return $this->apiResponse(new CategoryResource($category), 'Category updated successfully');
     }
 
     public function destroy(Category $category)
     {
         $this->authorizeCategory($category);
 
-        if ($category->transactions()->exists()) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Cannot delete category with existing transactions.',
-                'errors' => [],
-            ], 422);
+        if (!$this->categoryService->delete($category)) {
+            return $this->apiResponse(message: 'Cannot delete category with existing transactions.', status: 422);
         }
 
-        $category->delete();
-        return response()->json([
-            'success' => true,
-            'data' => null,
-            'message' => 'Category deleted successfully',
-        ]);
+        return $this->apiResponse(message: 'Category deleted successfully');
     }
 
     private function authorizeCategory(Category $category): void
     {
         if ($category->user_id !== auth()->id()) {
-            abort(response()->json(['success' => false, 'message' => 'Forbidden', 'errors' => []], 403));
+            abort(403);
         }
     }
 }

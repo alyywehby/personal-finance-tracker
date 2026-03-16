@@ -129,10 +129,11 @@ class TransactionApiTest extends TestCase
 
     public function test_user_cannot_update_others_transaction(): void
     {
-        $this->actingAsUser();
+        $user = $this->actingAsUser();
         $otherUser = User::factory()->create();
         $transaction = $this->createTransaction($otherUser);
-        $category = Category::factory()->create(['user_id' => $otherUser->id]);
+        // Use the authenticated user's category to pass validation
+        $category = Category::factory()->create(['user_id' => $user->id]);
 
         $response = $this->putJson("/api/v1/transactions/{$transaction->id}", [
             'type' => 'expense',
@@ -224,7 +225,11 @@ class TransactionApiTest extends TestCase
     public function test_export_csv_contains_correct_data(): void
     {
         $user = $this->actingAsUser();
-        $cat = Category::factory()->create(['user_id' => $user->id, 'name' => 'Food']);
+
+        // Verify categories were created
+        $this->assertCount(3, $this->categories, 'Categories should be created by actingAsUser()');
+        $cat = $this->categories[0];
+
         Transaction::factory()->create([
             'user_id' => $user->id,
             'category_id' => $cat->id,
@@ -234,8 +239,14 @@ class TransactionApiTest extends TestCase
             'transaction_date' => '2024-03-15',
         ]);
 
+        app()->setLocale('en');
+
         $response = $this->get('/api/v1/transactions/export');
         $content = $response->getContent();
+
+        // Remove BOM for easier assertion
+        $content = str_replace("\xEF\xBB\xBF", '', $content);
+
         $this->assertStringContainsString('Food', $content);
         $this->assertStringContainsString('50.00', $content);
     }

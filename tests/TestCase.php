@@ -25,7 +25,7 @@ abstract class TestCase extends BaseTestCase
         return $user;
     }
 
-    protected function actingAsUser(User $user = null): User
+    protected function actingAsUser(?User $user = null): User
     {
         $user = $user ?? $this->createUserWithCategories();
         Sanctum::actingAs($user);
