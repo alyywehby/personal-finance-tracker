@@ -242,7 +242,7 @@ class TransactionApiTest extends TestCase
         app()->setLocale('en');
 
         $response = $this->get('/api/v1/transactions/export');
-        $content = $response->getContent();
+        $content = $response->streamedContent();
 
         // Remove BOM for easier assertion
         $content = str_replace("\xEF\xBB\xBF", '', $content);
